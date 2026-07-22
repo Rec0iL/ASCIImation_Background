@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "asciimation@blinkenlights.nl",
+                "Name": "Simon Jansen & Antigravity"
+            }
+        ],
+        "Category": "Graphics",
+        "Description": "ASCII art animation live wallpaper & lock screen plugin with CRT aesthetic effects",
+        "Icon": "video-display",
+        "Id": "org.kde.plasma.starwars",
+        "License": "GPLv2+",
+        "Name": "ASCIImation",
+        "Website": "https://www.asciimation.co.nz/"
+    },
+    "Keywords": "starwars,ascii,screensaver,lockscreen,movie,blinkenlights,retro,crt",
+    "X-KDE-ParentApp": "org.kde.plasmashell"
+}

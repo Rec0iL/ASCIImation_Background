@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+  <kcfgfile name=""/>
+
+  <group name="General">
+    <entry name="AnimationIndex" type="Int">
+      <label>Selected Animation / Movie Index</label>
+      <default>0</default>
+    </entry>
+    <entry name="ThemeIndex" type="Int">
+      <label>Color Preset Index</label>
+      <default>0</default>
+    </entry>
+    <entry name="PhosphorColor" type="Color">
+      <label>Text Phosphor Color</label>
+      <default>#ffffff</default>
+    </entry>
+    <entry name="GlowIntensity" type="Double">
+      <label>CRT Phosphor Glow Intensity</label>
+      <default>0.6</default>
+    </entry>
+    <entry name="EnableScanlines" type="Bool">
+      <label>Enable CRT Scanlines</label>
+      <default>true</default>
+    </entry>
+    <entry name="ScanlineOpacity" type="Double">
+      <label>CRT Scanlines Opacity</label>
+      <default>0.25</default>
+    </entry>
+    <entry name="EnableStarfield" type="Bool">
+      <label>Enable Animated Space Starfield</label>
+      <default>true</default>
+    </entry>
+    <entry name="StarCount" type="Int">
+      <label>Starfield Particle Count</label>
+      <default>160</default>
+    </entry>
+    <entry name="PlaybackSpeed" type="Double">
+      <label>Movie Playback Speed Multiplier</label>
+      <default>1.0</default>
+    </entry>
+    <entry name="FontFamily" type="String">
+      <label>Monospaced Font Family</label>
+      <default>Monospace</default>
+    </entry>
+    <entry name="AutoFit" type="Bool">
+      <label>Auto-scale Text to Screen Bounds</label>
+      <default>true</default>
+    </entry>
+    <entry name="CustomFontSize" type="Int">
+      <label>Fixed Font Size in Pixels</label>
+      <default>18</default>
+    </entry>
+  </group>
+</kcfg>
