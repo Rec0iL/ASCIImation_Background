@@ -108,7 +108,10 @@ def gen_3d_cube_frames(count=48):
     for f in range(count):
         angle = (f / count) * 2 * math.pi
         sin_a, cos_a = math.sin(angle), math.cos(angle)
-        sin_b, cos_b = math.sin(angle * 0.8), math.cos(angle * 0.8)
+        # Integer multiple of `angle` (not a fractional 0.8x) so the second
+        # axis also completes a whole number of turns over `count` frames -
+        # a fractional ratio would never realign at the loop seam.
+        sin_b, cos_b = math.sin(angle * 2), math.cos(angle * 2)
 
         nodes = [
             [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
@@ -196,7 +199,10 @@ def gen_matrix_rain_frames(count=360):
             for j in range(col['length']):
                 cy = head_y - j
                 if 0 <= cy < height:
-                    char_idx = (col['start_offset'] + f + j) % len(col['chars'])
+                    # Index by head_pos (already exactly periodic in f with
+                    # period `count`), not by f directly, so glyph content
+                    # realigns perfectly at the loop seam regardless of speed.
+                    char_idx = (head_pos + j) % col['cycle_h']
                     if j == 0:
                         canvas[cy][col['x']] = col['chars'][char_idx].upper()
                     else:
@@ -208,9 +214,20 @@ def gen_matrix_rain_frames(count=360):
 
 
 def gen_aquarium_frames(count=60):
-    """ASCII aquarium with fish, bubbles, and seaweed."""
+    """ASCII aquarium with fish, bubbles, and seaweed.
+
+    All moving elements are placed via a closed-form function of f (a
+    fractional position along a period that evenly divides `count`), rather
+    than an accumulated simulation. That guarantees frame `count` is
+    identical to frame 0, so the loop has no teleport/jump at the seam.
+    """
     random.seed(123)
     width, height = 60, 16
+
+    # Periods that evenly divide count=60, so any choice wraps cleanly.
+    period_choices = [d for d in (10, 12, 15, 20, 30, 60) if count % d == 0]
+    if not period_choices:
+        period_choices = [count]
 
     # Fish templates (facing right and left)
     fish_r = ["><>", "><))'>", ">--->", "><((*>"]
@@ -221,24 +238,27 @@ def gen_aquarium_frames(count=60):
         direction = random.choice([1, -1])
         fish_idx = i % len(fish_r)
         template = fish_r[fish_idx] if direction > 0 else fish_l[fish_idx]
+        span = width + len(template)
         fishes.append({
-            'x': random.randint(0, width - 8),
             'y': random.randint(2, height - 4),
             'dir': direction,
-            'speed': random.choice([1, 1, 2]),
+            'period': random.choice(period_choices),
+            'phase': random.random(),
             'template': template,
-            'fish_idx': fish_idx
+            'span': span,
         })
 
     # Seaweed positions
     seaweed_x = [5, 15, 28, 42, 52]
+    sway_period = next((d for d in (20, 12, 10, 30, 60) if count % d == 0), count)
+
     # Bubble columns
     bubbles = []
     for i in range(4):
         bubbles.append({
             'x': random.randint(3, width - 3),
-            'y': random.randint(0, height - 1),
-            'speed': 1
+            'period': random.choice(period_choices),
+            'phase': random.random(),
         })
 
     frames = []
@@ -250,45 +270,41 @@ def gen_aquarium_frames(count=60):
             wave_char = '~' if (x + f) % 3 != 0 else '^'
             canvas[0][x] = wave_char
 
-        # Draw sandy bottom
+        # Draw sandy bottom (uncorrelated per-cell noise; no motion to break)
         for x in range(width):
             canvas[height - 1][x] = random.choice(['_', '.', ',', '_', '_'])
 
-        # Draw seaweed (swaying)
+        # Draw seaweed (swaying) - period divides count, so it realigns exactly
         for sx in seaweed_x:
-            sway = 1 if (f // 4) % 2 == 0 else -1
+            sway = 1 if (f % sway_period) < (sway_period // 2) else -1
             for sy in range(height - 4, height - 1):
                 wx = sx + (sway if sy < height - 2 else 0)
                 if 0 <= wx < width:
                     canvas[sy][wx] = random.choice([')', '(', '|'])
 
-        # Draw bubbles
+        # Draw bubbles - rise fraction t is periodic in f by construction
         for b in bubbles:
-            if 1 <= b['y'] < height - 1 and 0 <= b['x'] < width:
-                canvas[b['y']][b['x']] = 'o'
-            b['y'] -= b['speed']
-            if b['y'] < 1:
-                b['y'] = height - 3
-                b['x'] = random.randint(3, width - 3)
+            t = ((f + b['phase'] * b['period']) % b['period']) / b['period']
+            by = int((height - 3) - t * (height - 4))
+            if 1 <= by < height - 1 and 0 <= b['x'] < width:
+                canvas[by][b['x']] = 'o'
 
-        # Draw fish
+        # Draw fish - x is a fractional position along one full off-screen
+        # traversal; wraps exactly at t=1 which coincides with the next t=0.
         for fish in fishes:
-            tx = fish['x']
-            ty = fish['y']
+            t = ((f + fish['phase'] * fish['period']) % fish['period']) / fish['period']
             template = fish['template']
+            span = fish['span']
+            tlen = len(template)
+            if fish['dir'] > 0:
+                tx = int(-tlen + t * span)
+            else:
+                tx = int(width - t * span)
+            ty = fish['y']
             for ci, ch in enumerate(template):
                 px = tx + ci
                 if 1 <= ty < height - 1 and 0 <= px < width:
                     canvas[ty][px] = ch
-
-            fish['x'] += fish['dir'] * fish['speed']
-            # Wrap around
-            if fish['dir'] > 0 and fish['x'] > width:
-                fish['x'] = -len(fish['template'])
-                fish['y'] = random.randint(2, height - 4)
-            elif fish['dir'] < 0 and fish['x'] < -len(fish['template']):
-                fish['x'] = width
-                fish['y'] = random.randint(2, height - 4)
 
         frame_text = '\n'.join(''.join(row) for row in canvas)
         frames.append([2, frame_text])
@@ -381,24 +397,30 @@ def gen_fireworks_frames(count=48):
     for f in range(count):
         canvas = [[' ' for _ in range(width)] for _ in range(height)]
 
-        # Occasional stars in the sky
+        # Occasional stars in the sky - twinkle period (6) divides count (48)
+        # so the pattern realigns exactly at the loop seam.
         random.seed(42)
         for _ in range(15):
             sx = random.randint(0, width - 1)
             sy = random.randint(0, height - 3)
-            if (f + sx) % 7 < 5:
+            if (f + sx) % 6 < 4:
                 canvas[sy][sx] = '.'
 
         # Draw ground line
         for x in range(width):
             canvas[height - 1][x] = '_'
 
-        # Draw active bursts
+        # Draw active bursts. `rel` is age-since-launch wrapped modulo the
+        # total loop length, so a burst that's still exploding (or about to
+        # launch) right at the loop seam continues seamlessly into frame 0
+        # instead of being cut off and restarted.
         for burst in bursts:
-            age = f - burst['start']
-            if age < 0:
+            rel = (f - burst['start']) % count
+            if rel >= burst['life'] and rel <= count - 6:
+                continue
+            if rel > count - 6:
                 # Draw rising rocket trail
-                trail_age = burst['start'] - f
+                trail_age = count - rel
                 if trail_age <= 5:
                     trail_y = height - 2 - int((5 - trail_age) * (height - burst['cy'] - 2) / 5)
                     if 0 <= trail_y < height - 1 and 0 <= burst['cx'] < width:
@@ -406,10 +428,9 @@ def gen_fireworks_frames(count=48):
                         if trail_y + 1 < height - 1:
                             canvas[trail_y + 1][burst['cx']] = ':'
                 continue
-            if age >= burst['life']:
-                continue
 
             # Draw sparks expanding outward
+            age = rel
             progress = age / burst['life']
             for angle, speed in burst['sparks']:
                 dx = math.cos(angle) * speed * age * 0.8
@@ -426,9 +447,16 @@ def gen_fireworks_frames(count=48):
     return frames
 
 
-def gen_dvd_bounce_frames(count=80):
-    """The classic bouncing DVD logo screensaver."""
-    width, height = 60, 18
+def gen_dvd_bounce_frames():
+    """The classic bouncing DVD logo screensaver.
+
+    A logo reflecting off the box walls at unit speed per axis is a triangle
+    wave on each axis with period 2*range. It returns to the exact same
+    position *and* direction after lcm(2*range_x, 2*range_y) frames, so we
+    compute that period and use it as the frame count - the only way to make
+    a bouncing-ball loop close perfectly rather than jump at the seam.
+    """
+    width, height = 59, 18
     logo = [
         " _____  _     _ _____ ",
         "|  __ \\| |   | |  __ \\",
@@ -442,6 +470,10 @@ def gen_dvd_bounce_frames(count=80):
 
     x, y = 5, 3
     dx, dy = 1, 1
+
+    range_x = width - logo_w
+    range_y = height - logo_h
+    count = (2 * range_x * 2 * range_y) // math.gcd(2 * range_x, 2 * range_y)
 
     frames = []
     for f in range(count):
@@ -489,8 +521,11 @@ def gen_sine_wave_frames(count=48):
         for x in range(width):
             phase = (f / count) * 2 * math.pi
             val = math.sin((x / width) * 4 * math.pi + phase)
-            # Second harmonic
-            val += 0.4 * math.sin((x / width) * 8 * math.pi - phase * 1.5)
+            # Second harmonic - phase multiplier must be an integer, or this
+            # term lands on a different point of its cycle at f=count than
+            # at f=0 (e.g. 1.5x turns phase=2pi into 3pi, an odd multiple of
+            # pi, flipping the harmonic's sign right at the loop seam).
+            val += 0.4 * math.sin((x / width) * 8 * math.pi - phase * 2)
             y = int(mid_y - val * (height / 2 - 1.5))
             y = max(0, min(height - 1, y))
             if canvas[y][x] == '-':
