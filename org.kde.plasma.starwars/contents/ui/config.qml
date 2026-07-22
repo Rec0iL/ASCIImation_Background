@@ -22,6 +22,8 @@ Kirigami.FormLayout {
     property string cfg_FontFamily: wallpaper.configuration.FontFamily
     property bool cfg_AutoFit: wallpaper.configuration.AutoFit
     property int cfg_CustomFontSize: wallpaper.configuration.CustomFontSize
+    property bool cfg_EnableCrtDistortion: wallpaper.configuration.EnableCrtDistortion
+    property bool cfg_EnableCrtVignette: wallpaper.configuration.EnableCrtVignette
 
     readonly property var themeColors: [
         "#ffffff", // Default (White)
@@ -118,6 +120,22 @@ Kirigami.FormLayout {
     Kirigami.Separator {
         Kirigami.FormData.isSection: true
         Kirigami.FormData.label: "CRT & Screen Effects"
+    }
+
+    CheckBox {
+        id: crtDistortionCheck
+        Kirigami.FormData.label: "Monitor:"
+        text: "Enable CRT Image Distortion"
+        checked: cfg_EnableCrtDistortion
+        onCheckedChanged: cfg_EnableCrtDistortion = checked
+    }
+
+    CheckBox {
+        id: crtVignetteCheck
+        Kirigami.FormData.label: "Vignette:"
+        text: "Enable Darkened Edges (Vignette)"
+        checked: cfg_EnableCrtVignette
+        onCheckedChanged: cfg_EnableCrtVignette = checked
     }
 
     CheckBox {

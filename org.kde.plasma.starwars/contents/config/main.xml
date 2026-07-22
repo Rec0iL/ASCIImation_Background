@@ -54,5 +54,13 @@
       <label>Fixed Font Size in Pixels</label>
       <default>18</default>
     </entry>
+    <entry name="EnableCrtDistortion" type="Bool">
+      <label>Enable CRT Monitor Distortion</label>
+      <default>false</default>
+    </entry>
+    <entry name="EnableCrtVignette" type="Bool">
+      <label>Enable CRT Vignette (Darkened Edges)</label>
+      <default>false</default>
+    </entry>
   </group>
 </kcfg>

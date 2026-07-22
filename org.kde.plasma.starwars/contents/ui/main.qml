@@ -18,6 +18,8 @@ WallpaperItem {
     readonly property string fontFamily: root.configuration.FontFamily
     readonly property bool autoFit: root.configuration.AutoFit
     readonly property int customFontSize: root.configuration.CustomFontSize
+    readonly property bool enableCrtDistortion: root.configuration.EnableCrtDistortion
+    readonly property bool enableCrtVignette: root.configuration.EnableCrtVignette
 
     // Is the Nyan Cat animation selected with Default (White) color?
     readonly property bool isNyanRainbow: root.animIdx === 1 && Qt.colorEqual(root.phosphorColor, "#ffffff")
@@ -130,11 +132,21 @@ WallpaperItem {
 
     onAnimIdxChanged: updateActiveAnimation()
 
-    // Deep space black background
-    Rectangle {
+    Item {
+        id: effectSourceItem
         anchors.fill: parent
-        color: "#030407"
-    }
+        layer.enabled: root.enableCrtDistortion || root.enableCrtVignette
+        layer.effect: ShaderEffect {
+            fragmentShader: "crt.qsb"
+            property real enableDistortion: root.enableCrtDistortion ? 1.0 : 0.0
+            property real enableVignette: root.enableCrtVignette ? 1.0 : 0.0
+        }
+
+        // Deep space black background
+        Rectangle {
+            anchors.fill: parent
+            color: "#030407"
+        }
 
     // Canvas Starfield Particle Effect
     Canvas {
@@ -345,6 +357,7 @@ WallpaperItem {
         border.color: "#000000"
         border.width: Math.max(1, Math.round(Math.min(root.width, root.height) * 0.02))
         opacity: 0.7
+    }
     }
 
     // Animation Loop Timer
