@@ -38,21 +38,44 @@ def gen_nyan_cat_frames():
     rainbow_wave1 = "~_=-_=-_=-_=-_=-_=-_=-_=-_=-_=-_=-"
     rainbow_wave2 = "_=-_=-_=-_=-_=-_=-_=-_=-_=-_=-_=-~"
 
+    cat = [
+        "   /\\_/\\ ",
+        " =( o.o )=",
+        "   (   ) ",
+        "   \"\" \"\" "
+    ]
+
     for f in range(12):
         r_line1 = rainbow_wave1[f % 6:] + rainbow_wave1[:f % 6]
         r_line2 = rainbow_wave2[f % 6:] + rainbow_wave2[:f % 6]
         star = "  *  " if f % 2 == 0 else "   + "
         star2 = " +   " if f % 2 == 0 else "  *  "
 
-        c_lines = [
-            f"       {star}                                 {star2}",
-            f"{r_line1[:28]}   /\\_/\\ ",
-            f"{r_line2[:28]} =( o.o )=",
-            f"{r_line1[:28]}   (   ) ",
-            f"{r_line2[:28]}   \"\" \"\" ",
-            f"       {star2}                                 {star}"
+        bg = [
+            f"       {star}                                 {star2}".ljust(50, ' '),
+            f"{r_line1[:28]}                      ",
+            f"{r_line2[:28]}                      ",
+            f"{r_line1[:28]}                      ",
+            f"{r_line2[:28]}                      ",
+            f"       {star2}                                 {star}".ljust(50, ' '),
+            "                                                  "
         ]
-        frames.append([2, "\n".join(c_lines)])
+
+        offset = 0 if f % 2 == 0 else 1
+        cat_x = 28
+
+        for i in range(4):
+            cat_y = 1 + offset + i
+            bg_line = bg[cat_y]
+            cat_line = cat[i]
+            
+            if len(bg_line) < cat_x + len(cat_line):
+                bg_line = bg_line.ljust(cat_x + len(cat_line), ' ')
+                
+            bg[cat_y] = bg_line[:cat_x] + cat_line + bg_line[cat_x + len(cat_line):]
+
+        bg = [line.rstrip() for line in bg]
+        frames.append([2, "\n".join(bg)])
     return frames
 
 def gen_party_parrot_frames():
@@ -272,15 +295,15 @@ def gen_aquarium_frames(count=60):
     return frames
 
 
-def gen_rotating_donut_frames(count=60):
+def gen_rotating_donut_frames(count=180):
     """The classic spinning 3D ASCII donut/torus."""
     width, height = 50, 20
     frames = []
     luminance_chars = ".,-~:;=!*#$@"
 
     for f in range(count):
-        A = f * 0.07
-        B = f * 0.03
+        A = f * (4 * math.pi / count)
+        B = f * (2 * math.pi / count)
         z_buffer = [0.0] * (width * height)
         output = [' '] * (width * height)
 
