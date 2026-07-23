@@ -29,9 +29,23 @@ def parse_starwars(txt_path):
                 frame_lines.append(raw_lines[idx + 1 + j].rstrip("\r\n"))
             else:
                 frame_lines.append("")
-        frames.append([delay, "\n".join(frame_lines)])
+        frames.append([delay, frame_lines])
         idx += 14
-    return frames
+
+    # Each line only has *leading* spaces baked in for centering against a
+    # fixed-width canvas - no trailing padding. The renderer auto-sizes its
+    # text box to the longest line, so if a frame's longest line falls short
+    # of the true canvas width (e.g. the "presents" title card), the leading
+    # whitespace pushes the visible art toward the right edge of that
+    # frame's own (too-narrow) box instead of the intended fixed canvas.
+    # Padding every line to the width used anywhere in the movie keeps the
+    # box - and therefore the centering - consistent across every frame.
+    canvas_width = max((len(line) for _, lines in frames for line in lines), default=0)
+    for _, lines in frames:
+        for i, line in enumerate(lines):
+            lines[i] = line.ljust(canvas_width)
+
+    return [[delay, "\n".join(lines)] for delay, lines in frames]
 
 def gen_nyan_cat_frames():
     frames = []
